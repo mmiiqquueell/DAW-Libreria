@@ -1,21 +1,43 @@
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.sql.DataSource;
 
 @WebServlet("/consulta")
 public class Consulta extends HttpServlet {
 	private static final long serialVersionUID = 1L;
-       
+	DataSource pool;
+	@Override
+	public void init() throws ServletException {
+		super.init();
+		
+		try {
+			InitialContext contexto = new InitialContext();
+			pool = (DataSource) contexto.lookup("java:comp/env/jdbc/mysql_tiendalibros");
+			
+			if(pool == null) {
+				throw new ServletException("ERROR DE ACCESO AL POOL DE CONEXIONES (NULL)");
+			}
+			
+		} catch (NamingException e) {
+			System.out.println("ERROR DE ACCESO AL POOL DE CONEXIONES");
+			e.printStackTrace();
+		}
+		
+		
+	}
+	
     public Consulta() {super();}
 	
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -36,12 +58,13 @@ public class Consulta extends HttpServlet {
 			Class.forName("com.mysql.jdbc.Driver");
 			
 			// Credenciales para conectarse a la base de datos //
-			String url = "jdbc:mysql://localhost/TiendaLibros";
+			/* String url = "jdbc:mysql://localhost/TiendaLibros";
 			String usuario = "librero";
-			String password = "Ageofempires2";
+			String password = "Ageofempires2";*/ 
 			
 			// Consula SQL //
-			con = DriverManager.getConnection(url, usuario, password);
+			// con = DriverManager.getConnection(url, usuario, password);
+			con = pool.getConnection();
 			String sql = "SELECT * FROM libros WHERE autor = ?";
 			stmt = con.prepareStatement(sql);
 			stmt.setString(1, autor);
